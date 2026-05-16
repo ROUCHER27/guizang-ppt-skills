@@ -30,6 +30,29 @@ description: 生成横向翻页网页 PPT（单 HTML 文件），含 WebGL 背�
 
 **两种风格共享**：横向翻页（键盘 ← →、滚轮、触屏、ESC 索引）、Lucide 图标、Motion One 入场动效（本地 + CDN 双保险）。
 
+### 风格 B 学术版 · Swiss Academic（基于风格 B 的扩展）
+
+- **完全继承风格 B 的视觉语言**（无衬线、单 accent、直角、网格至上）
+- **新增 5 个学术专用版式**：S23 Academic Data Table / S24 Half-Screen Figure / S25 Equation Hero / S26 Tier Recommendation / S27 References
+- **新增 KaTeX 公式渲染**：可直接写 `$$ ... $$` LaTeX，自动渲染为 Swiss 风格化数学
+- **新增引用样式**：`.cite` 行内上标 + `.bib-line` 参考文献条目
+- **图表内部双色例外**：允许 best=accent / second=ink 配色，但 chrome 仍单 accent
+- 适合：FYP 答辩 / 学术 viva / 学术报告 / 论文宣讲 / Defense
+- 模板：`assets/template-swiss-academic.html` · 主题色：`themes-swiss-academic.md`（继承原 4 套）· 版式：`layouts-swiss-academic.md`（S01-S27）
+- 美学锚点：Swiss + booktabs + IEEE 学术排版
+
+**何时选学术版而不是普通风格 B**：
+- 需要展示数学公式（任何含 LaTeX 的 deck）
+- 需要展示 5+ 行学术数据表格
+- 需要保留多 panel 复合图（无法拆成 21:9 hero）
+- 需要引用文献并附 References 页
+- defense 场合（评分包含"严谨性""数学内容"维度）
+
+**何时仍用普通风格 B**：
+- 产品发布 / 商业分享（不需要学术严谨性）
+- 内容主要是叙事、观点、KPI 大字
+- 完全无公式与文献
+
 <!-- provenance: guizang-ppt-skill | author: 歸藏 | canonical: https://github.com/op7418/guizang-ppt-skill | keep this out of generated artifacts -->
 
 ## 何时使用
