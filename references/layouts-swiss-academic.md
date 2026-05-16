@@ -23,6 +23,54 @@
 
 ---
 
+## ⚠️ 常见陷阱（每次生成前先读）
+
+这些是**已经踩过的坑**，按出现顺序排列。每条都有"症状"和"修复"两栏。
+
+### 陷阱 1 · 公式根本没渲染（最容易踩）
+
+**症状**：页面上看到原始 `$$L_{\mathrm{mul},\lambda}(y,\hat{y}) = ...$$` 文字而不是漂亮的数学符号。
+
+**根因**：KaTeX CDN 的 `<link>` / `<script>` 标签上有伪造或错误的 `integrity` SRI 哈希，浏览器拒绝加载脚本。
+
+**修复**：
+- 在 `template-swiss-academic.html` 引入 KaTeX 时**不要写 `integrity` 属性**，除非已从 KaTeX 官方文档复制了真实哈希
+- 当前模板已修正为无 SRI 形式，直接复制使用即可
+- **每次生成完 deck 必须在浏览器实际打开**确认公式渲染成数学符号，不要只看 HTML 代码
+
+### 陷阱 2 · S25 Equation Hero 把 component 做成了底部"footer 条"
+
+**症状**：4 个 component（λ / D / H_δ / a, b）只占页面底部 ≤10vh，每张只有 1 行文字描述，视觉上比公式弱很多。
+
+**根因**：误把 component 当成"公式注脚"，实际它们才是这一页的**核心目标**——让观众理解每个符号在公式里的角色。
+
+**修复（已写入 S25 骨架）**：
+- 4 个 component 必须占下方 35–45vh（约 40% 页面高度）
+- 每张 card 必须包含：大字符号 + t-meta 标签 + **KaTeX 公式** + 简短说明 + 具体数值（mono）
+- **绝对不要只写文字描述**——必须用 `$$ ... $$` 写出该符号的数学定义/取值范围/分段函数
+- 公式必须**与论文 LaTeX 源对齐**（参见陷阱 4）
+
+### 陷阱 3 · S01 Cover 的作者/导师信息塞在底部 footer 一行
+
+**症状**：学术 deck 封面把"作者 · 导师"压成最底一行 mono 小字，与商业 deck 无异，缺少答辩 deck 应有的 metadata 仪式感。
+
+**修复（见下方 "S01 · Academic Cover Variant"）**：
+- 学术封面采用 "标题区 + 右侧 metadata aside" 双列布局
+- 右侧栏用 `border-left: 1px solid` 与标题区做 hairline 分隔
+- 4 段 metadata 上下排列：SPEAKER · PROGRAMME · SUPERVISOR · INSTITUTION
+- 每段允许 1-2 行换行，学号用 mono、姓名用 sans-serif Light
+
+### 陷阱 4 · 数学表达脱离论文原文
+
+**症状**：自行用 unicode 或非正式符号写公式（如 `H_δ(e) = ½e²`、`σ(ayŷ)` 直接拼成字符串），与论文 chapter3 / appendix A 的 LaTeX 源不一致。
+
+**修复**：
+- 生成任何含公式的 slide 前，必须 `grep` 论文 `2253235_yirongyu_2026_Supplementary/latex/chapter3_methodology.tex` 与 `appendix_A_loss_definitions.tex` 确认精确公式
+- 永远使用 KaTeX `$$ ... $$` 而非 unicode
+- 使用 `\big[...\big]`、`\frac`、`\begin{cases}`、`\mathbb{E}`、`\sigma`、`\tfrac` 等学术标准宏
+
+---
+
 ## 新增的 5 个学术版式概览
 
 | ID | 用途 | 关键约束 |
@@ -35,7 +83,89 @@
 
 ---
 
-## S23 · Academic Data Table
+## S01 · Academic Cover Variant（封面学术变体）
+
+**用途**：学术 deck（FYP 答辩 / viva / 学术报告）的封面，需要醒目展示作者、学号、Programme、导师、机构等元数据。
+
+**与原 S01 IKB 默认变体的差异**：
+- 标题区从单列改为 **双列 grid**：左列大标题、右列 metadata aside
+- 右侧 aside 宽度由内容决定（`grid-template-columns: 1fr auto`），通过 `border-left: 1px solid` 与标题区分隔
+- 元数据按学术答辩惯例分 4 段：**SPEAKER · PROGRAMME · SUPERVISOR · INSTITUTION**
+- 学号用 `var(--mono)` 等宽字体，姓名用 `var(--sans)` Light（300）
+- 每段允许 1-2 行换行（如 `BSc Applied<br/>Mathematics`、`XJTLU<br/>School of Math & Physics`）
+
+**关键类**：与原 S01 完全相同（`.slide.accent`、`.ascii-bg`、`.t-meta`、`.lead`），只在标题 grid 加 `aside` 子元素。
+
+**视觉规则**：
+- aside 与标题底部对齐：`align-items: end`
+- aside 与标题间距：`gap: 4vw`
+- aside 内部 4 段间距：`gap: 1.6vh`
+- 每段内部：t-meta 小标 + 主文 + （可选）补充行，`gap: .3vh`
+- 颜色全部 `rgba(255,255,255,...)` 不同透明度（在 IKB 蓝底上反白）：
+  - t-meta 标签：`.6` 不透明
+  - 主文：`#fff` 全白
+  - 学号、辅助行：`.78` ~ `.92` 之间
+
+**HTML 骨架**：
+```html
+<section class="slide accent" data-animate="hero">
+  <div class="canvas-card">
+    <canvas class="ascii-bg" aria-hidden="true"></canvas>
+    <div class="chrome-min">
+      <div class="l">FYP DEFENSE · 2026.05.16</div>
+      <div class="r">XJTLU MAP · 01 / NN</div>
+    </div>
+    <div style="flex:1;padding:0;display:grid;grid-template-rows:auto 1fr auto;gap:2.6vh">
+      <div data-anim="kicker" class="t-meta" style="color:rgba(255,255,255,.78);letter-spacing:.22em">FINAL YEAR PROJECT · [SECTION EN]</div>
+
+      <!-- 标题 + 右侧 metadata aside -->
+      <div data-anim="title" style="align-self:center;display:grid;grid-template-columns:1fr auto;gap:4vw;align-items:end">
+        <h1 style="font-family:var(--sans),var(--sans-zh);font-weight:200;font-size:min(7.4vw,12.4vh);line-height:.94;letter-spacing:-.025em;color:#fff;margin:0">
+          [必填] Multiplicative<br/><span style="font-style:italic;font-weight:300">[必填] Italic 微强调</span><br/>[必填] 第三行
+        </h1>
+
+        <aside style="display:flex;flex-direction:column;gap:1.6vh;border-left:1px solid rgba(255,255,255,.32);padding:.5vh 0 .5vh 1.8vw;min-width:18ch">
+          <div style="display:flex;flex-direction:column;gap:.3vh">
+            <div class="t-meta" style="color:rgba(255,255,255,.6);letter-spacing:.22em">SPEAKER</div>
+            <div style="font-family:var(--sans),var(--sans-zh);font-weight:300;font-size:min(1.9vw,3.2vh);color:#fff;line-height:1.15">[必填] 姓名</div>
+            <div style="font-family:var(--mono);font-weight:400;font-size:min(1.1vw,1.9vh);color:rgba(255,255,255,.78);letter-spacing:.04em">[必填] 学号</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:.3vh">
+            <div class="t-meta" style="color:rgba(255,255,255,.6);letter-spacing:.22em">PROGRAMME</div>
+            <div style="font-family:var(--sans),var(--sans-zh);font-weight:300;font-size:min(1.05vw,1.85vh);color:rgba(255,255,255,.92);line-height:1.3">[必填] 专业<br/>[可选] 第二行</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:.3vh">
+            <div class="t-meta" style="color:rgba(255,255,255,.6);letter-spacing:.22em">SUPERVISOR</div>
+            <div style="font-family:var(--sans),var(--sans-zh);font-weight:300;font-size:min(1.45vw,2.4vh);color:#fff;line-height:1.2">[必填] Dr. 导师姓名</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:.3vh">
+            <div class="t-meta" style="color:rgba(255,255,255,.6);letter-spacing:.22em">INSTITUTION</div>
+            <div style="font-family:var(--sans),var(--sans-zh);font-weight:300;font-size:min(1.05vw,1.85vh);color:rgba(255,255,255,.92);line-height:1.3">[必填] 学校缩写<br/>[必填] 学院全称</div>
+          </div>
+        </aside>
+      </div>
+
+      <div data-anim="bottom" style="display:grid;grid-template-rows:auto auto;gap:1.6vh;border-top:1px solid rgba(255,255,255,.22);padding-top:2vh">
+        <div data-anim="lead" class="lead" style="max-width:62ch;color:rgba(255,255,255,.86);font-weight:300">[必填] 1-2 行的副标 / 一句话研究问题.</div>
+        <div style="display:flex;justify-content:space-between;align-items:end">
+          <div class="t-meta" style="color:rgba(255,255,255,.6)">[选填] 答辩信息 · 日期</div>
+          <div class="t-meta" style="color:rgba(255,255,255,.6)">→ ARROW KEYS</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+```
+
+**禁止**：
+- 不要把 metadata 缩到底部 footer 一行 mono（这是商业 deck 模式，学术答辩不适合）
+- 学号与作者姓名必须放在同一段（视觉上"主讲人 + 学号"是一组关系）
+- aside 内不能用 IKB 蓝 accent 强调任何元素（已经是 IKB 满底，蓝压蓝看不见）
+- aside 总宽度建议 18-22ch，不要超过 25ch（防止挤占标题）
+
+---
+
+
 
 **用途**：展示多列学术度量表格，例如 baseline 损失对比、γ refinement、normalisation probe。
 
@@ -173,53 +303,98 @@
 
 ## S25 · Equation Hero
 
-**用途**：展示一条核心数学公式（例如 hybrid loss 定义）。
+**用途**：展示一条核心数学公式（例如 hybrid loss 定义），并把公式中的每个符号 / 子项作为**主视觉锚点**展开。
 
-**适用内容**：可以用 KaTeX 渲染的 LaTeX 公式 + 下方 2-4 个分项解释（每项是公式中一个符号或一个组件）。
+**适用内容**：可以用 KaTeX 渲染的 LaTeX 公式 + 下方 3-4 个核心 component（每项必须包含该符号的**数学定义**或**取值范围**，不只是文字描述）。
 
-**关键类**：`.eq-hero`、`.eq-component-grid`、`.eq-component`、`.cite`
+**关键类**：`.katex-display`、`.t-meta`、`.grid-12`、`.span-3`、`.cite`
 
 **视觉规则**：
-- 公式居中显示，KaTeX `display` 模式（`$$ ... $$`）
-- 公式上方有 1 行 t-meta kicker，下方有 1 行 lead 概念定义
-- 下方 2-4 列 component grid，每列 = 一个符号 + 一句话解释
-- 行间无线，纯 whitespace
-- 公式字号通过 KaTeX 自身控制（默认 1.21em），Swiss 学术版强制 font-weight:300
+- **页面纵向比例**：标题区 ~25vh / 公式区 ~25-30vh（紧凑双公式）/ component 区 ~40-45vh（**主视觉**）
+- 公式区上下用 `border-top: 1px solid var(--border-subtle)` + `border-bottom: 1px solid var(--border-subtle)` hairline 包夹，与 component 区用空白自然分隔
+- 标题字号比 S22 章节标题略小（`min(3.6vw,6.8vh)` 而非 `min(4.6vw,8.5vh)`），把空间让给公式与 component
+- 4 个 component card 在 `grid-12` 上 4×`span-3`，`gap:0`，列与列之间用 `border-right: 1px solid var(--border-subtle)` 分隔（最后一列不加）
+- **每张 card 的内部结构（必选）**：
+  1. 大字符号（`min(4vw,7vh)`，`font-style:italic`，`font-weight:300`，第 1 张可用 accent 色）
+  2. t-meta 角色标签（如 `DIRECTIONAL WEIGHT`）
+  3. **KaTeX 公式块**（`$$ ... $$`，font-size 约 `.74vw - .82vw`，宽度 100%）—— **不可省略**
+  4. 1-2 行简短文字说明（最多 2 行，font-size `1.3vh`）
+  5. 底部 mono 数值块（具体参数 / 取值范围 / 论文常数），与上方用 `border-top: 1px solid var(--border-subtle)` + `padding-top:.9vh` 分隔，`margin-top: auto` 推到底
+- 公式字号通过 KaTeX 自身控制；Swiss 学术版 CSS 强制 `.katex { font-weight:300 }`
 
 **HTML 骨架**：
 ```html
-<section class="slide light" data-layout="S25" data-animate="equation-reveal">
+<section class="slide light" data-layout="S25" data-animate="grid-reveal">
   <div class="canvas-card">
-    <header class="chrome-min">...</header>
-    <div style="flex:1;padding:0;display:grid;grid-template-rows:auto auto 1fr auto;gap:2.6vh">
+    <div class="chrome-min">...</div>
+    <div style="flex:1;padding:0;display:grid;grid-template-rows:auto auto auto 1fr;gap:1.8vh">
       <div data-anim="kicker" class="t-meta">METHODOLOGY · LOSS FAMILIES · MULTIPLICATIVE HYBRID</div>
-      <h2 data-anim="title" class="h-xl-zh" style="font-size:min(4.6vw,8.5vh);font-weight:200;line-height:1">
-        乘法混合：方向门控 × 稳健幅度
+      <h2 data-anim="title" class="h-xl-zh" style="font-size:min(3.6vw,6.8vh);font-weight:200;line-height:1;color:var(--ink);margin:0">
+        乘法混合：<span style="color:var(--accent);font-style:italic;font-weight:300">方向门控</span> × 稳健幅度
       </h2>
-      <div data-anim="equation" style="display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:0 4vw">
-        <div class="lead" style="margin-bottom:1.2vh">
-          The multiplicative hybrid uses the directional penalty as a gating factor on the Huber backbone:
+
+      <!-- 紧凑公式区，hairline 上下包夹 -->
+      <div data-anim="equation" style="display:flex;flex-direction:column;justify-content:center;gap:1.2vh;padding:1vh 0;border-top:1px solid var(--border-subtle);border-bottom:1px solid var(--border-subtle)">
+        <div class="katex-display" style="font-size:1.35vw;width:100%;margin:0">
+          $$L_{\mathrm{mul},\lambda}(y,\hat{y}) \;=\; \big(1 + \lambda \cdot D(y,\hat{y})\big)\;\cdot\;H_\delta(y - \hat{y})$$
         </div>
-        <div class="katex-display" style="font-size:1.4vw">
-          $$L_{\mathrm{mul},\lambda}(y,\hat{y}) = \big(1 + \lambda \cdot D(y,\hat{y})\big) \cdot H_\delta(y - \hat{y}) \quad \text{where } D = \big[1 - \sigma(a y \hat{y})\big] \cdot \frac{|y|^b}{\mathbb{E}_{\text{batch}}[|y|^b] + \epsilon}$$
+        <div class="katex-display" style="font-size:1.05vw;width:100%;margin:0;color:var(--text-secondary)">
+          $$\text{where}\quad D(y,\hat{y}) \;=\; \big[1 - \sigma(a\,y\,\hat{y})\big]\;\cdot\;\frac{|y|^{b}}{\mathbb{E}_{\mathrm{batch}}[|y|^{b}] + \epsilon}$$
         </div>
       </div>
-      <div data-anim="components" class="grid-12" style="gap:2vw;border-top:1px solid var(--border-subtle);padding-top:2vh">
-        <div class="span-3">
-          <div class="t-meta">λ · DIRECTIONAL WEIGHT</div>
-          <div style="font-weight:300;font-size:1.4vh;margin-top:.6vh">控制方向门控强度。Phase 2 中 M1: λ=2, M2: λ=5</div>
+
+      <!-- Component 网格 - 主视觉，占下方约 40vh -->
+      <div data-anim="components" class="grid-12" style="gap:0;align-items:stretch">
+        <!-- Card 1 · λ -->
+        <div class="span-3" style="display:flex;flex-direction:column;gap:1vh;padding:2vh 1.2vw 0 0;border-right:1px solid var(--border-subtle)">
+          <div style="font-family:var(--sans);font-style:italic;font-weight:300;font-size:min(4vw,7vh);line-height:1;color:var(--accent);letter-spacing:-.02em">λ</div>
+          <div class="t-meta" style="color:var(--ink);letter-spacing:.18em">DIRECTIONAL WEIGHT</div>
+          <div style="font-weight:300;font-size:1.3vh;color:var(--text-primary);line-height:1.4">Scalar coefficient on the gate; tunes how aggressively sign-wrong predictions are amplified.</div>
+          <div class="katex-display" style="font-size:.78vw;margin:0;text-align:left;color:var(--ink)">
+            $$\lambda \in \{0.1,\, 0.5,\, 2,\, 5\}$$
+          </div>
+          <div style="font-family:var(--mono);font-weight:400;font-size:1.2vh;color:var(--text-secondary);margin-top:auto;border-top:1px solid var(--border-subtle);padding-top:.9vh;line-height:1.5">
+            M<sub>1</sub>: λ = 2<br/>M<sub>2</sub>: λ = 5
+          </div>
         </div>
-        <div class="span-3">
-          <div class="t-meta">D · DIRECTIONAL GATE</div>
-          <div style="font-weight:300;font-size:1.4vh;margin-top:.6vh">batch-normalised, 正确符号时 → 0，错误时 → +∞</div>
+
+        <!-- Card 2 · D -->
+        <div class="span-3" style="display:flex;flex-direction:column;gap:1vh;padding:2vh 1.2vw 0 1.2vw;border-right:1px solid var(--border-subtle)">
+          <div style="font-family:var(--sans);font-style:italic;font-weight:300;font-size:min(4vw,7vh);line-height:1;color:var(--ink);letter-spacing:-.02em">D</div>
+          <div class="t-meta" style="color:var(--ink);letter-spacing:.18em">DIRECTIONAL GATE</div>
+          <div class="katex-display" style="font-size:.74vw;margin:0;text-align:left;color:var(--ink)">
+            $$D(y,\hat{y}) \;=\; \big[1 - \sigma(a\,y\,\hat{y})\big]\cdot \frac{|y|^{b}}{\mathbb{E}_{\mathrm{batch}}[|y|^{b}] + \epsilon}$$
+          </div>
+          <div style="font-weight:300;font-size:1.3vh;color:var(--text-primary);line-height:1.4"><em>D</em> ≥ 0; <em>D</em> → 0 when sign(<em>y</em>) = sign(<em>ŷ</em>).</div>
+          <div style="font-family:var(--mono);font-weight:400;font-size:1.2vh;color:var(--text-secondary);margin-top:auto;border-top:1px solid var(--border-subtle);padding-top:.9vh;line-height:1.5">
+            range ≈ [0, 2]<br/>ε = 10<sup>−8</sup>
+          </div>
         </div>
-        <div class="span-3">
-          <div class="t-meta">H<sub>δ</sub> · HUBER BACKBONE</div>
-          <div style="font-weight:300;font-size:1.4vh;margin-top:.6vh">δ=0.01；小残差二次、大残差线性，限制异常点影响</div>
+
+        <!-- Card 3 · H_δ -->
+        <div class="span-3" style="display:flex;flex-direction:column;gap:1vh;padding:2vh 1.2vw 0 1.2vw;border-right:1px solid var(--border-subtle)">
+          <div style="font-family:var(--sans);font-style:italic;font-weight:300;font-size:min(4vw,7vh);line-height:1;color:var(--ink);letter-spacing:-.02em">H<sub style="font-size:.45em;font-style:normal">δ</sub></div>
+          <div class="t-meta" style="color:var(--ink);letter-spacing:.18em">HUBER BACKBONE</div>
+          <div class="katex-display" style="font-size:.78vw;margin:0;text-align:left;color:var(--ink)">
+            $$H_\delta(e) \;=\; \begin{cases} \tfrac{1}{2}\,e^{2} & |e| \le \delta \\[2pt] \delta\big(|e| - \tfrac{\delta}{2}\big) & |e| > \delta \end{cases}$$
+          </div>
+          <div style="font-weight:300;font-size:1.3vh;color:var(--text-primary);line-height:1.4">Quadratic for small residuals, linear above δ; <em>e</em> = <em>y</em> − <em>ŷ</em>.</div>
+          <div style="font-family:var(--mono);font-weight:400;font-size:1.2vh;color:var(--text-secondary);margin-top:auto;border-top:1px solid var(--border-subtle);padding-top:.9vh;line-height:1.5">
+            δ = 0.01
+          </div>
         </div>
-        <div class="span-3">
-          <div class="t-meta">a, b · SHAPE PARAMS</div>
-          <div style="font-weight:300;font-size:1.4vh;margin-top:.6vh">a=100 控制 sigmoid 陡峭度；b=2 放大大幅度回报权重</div>
+
+        <!-- Card 4 · a, b -->
+        <div class="span-3" style="display:flex;flex-direction:column;gap:1vh;padding:2vh 0 0 1.2vw">
+          <div style="font-family:var(--sans);font-style:italic;font-weight:300;font-size:min(4vw,7vh);line-height:1;color:var(--ink);letter-spacing:-.02em">a, b</div>
+          <div class="t-meta" style="color:var(--ink);letter-spacing:.18em">SHAPE PARAMETERS</div>
+          <div class="katex-display" style="font-size:.78vw;margin:0;text-align:left;color:var(--ink)">
+            $$\sigma(a\,y\,\hat{y}) \;=\; \frac{1}{1 + e^{-a\,y\,\hat{y}}},\quad |y|^{b}$$
+          </div>
+          <div style="font-weight:300;font-size:1.3vh;color:var(--text-primary);line-height:1.4"><em>a</em> sets sigmoid steepness; <em>b</em> magnifies large-|<em>y</em>| weight.</div>
+          <div style="font-family:var(--mono);font-weight:400;font-size:1.2vh;color:var(--text-secondary);margin-top:auto;border-top:1px solid var(--border-subtle);padding-top:.9vh;line-height:1.5">
+            a = 100<br/>b = 2
+          </div>
         </div>
       </div>
     </div>
@@ -227,12 +402,15 @@
 </section>
 ```
 
-**动效 recipe**：`equation-reveal` — kicker 与 title 一起 fade-up，公式从 0.95 → 1 scale-in 同时 opacity fade-in（450ms），下方四个 component 序列点亮。
+**动效 recipe**：`grid-reveal`（已存在于模板的 `RECIPES` 字典）—— kicker 与 title fade-up，公式 fade-in，4 个 component card 序列点亮（80-120ms 间隔）。
 
-**禁止**：
-- 公式不能用 unicode 假装 LaTeX（如 `L = (1+λD)·H` 直接写在 HTML）—— 必须用 KaTeX `$$ ... $$`
-- 不要让公式宽度超过 page width 90%（KaTeX 会自动 scroll，但视觉破碎）
-- component grid 最多 4 列；超过用 S04 Six Cells
+**禁止（强制）**：
+- ❌ 公式不能用 unicode 假装 LaTeX（如 `H_δ(e) = ½e²` 直接写在 HTML）—— 必须用 KaTeX `$$ ... $$`
+- ❌ Component card **必须含 KaTeX 公式块**，不能只用文字描述敷衍（这是这一页的核心目标）
+- ❌ Component 区不能压缩到 ≤ 10vh 的"footer 条"，必须占下方 35-45vh
+- ❌ 公式宽度不要超过 card 内宽 95%，避免 KaTeX 自动 scroll 导致版式破碎
+- ❌ 公式字号超出 card 宽度时，先降字号 (`.7vw → .65vw`)，再考虑拆分公式（不要让公式换行折叠）
+- ❌ 4 个 card 必须等高（`align-items:stretch`），mono 数值块用 `margin-top:auto` 推到底
 
 ---
 
@@ -454,9 +632,13 @@ slide 内容是?
 
 ### 公式
 - [ ] 所有公式用 KaTeX `$$ ... $$` 渲染，不是 unicode 假装
-- [ ] 公式的字重通过 `.katex` 类被强制成 300（学术版 CSS 已处理）
+- [ ] 所有公式与论文 LaTeX 源对齐（grep `chapter3_methodology.tex` 与 `appendix_A_loss_definitions.tex`）
+- [ ] **必须在浏览器实际打开 deck**确认公式渲染成数学符号，不只是看 HTML 代码
+- [ ] CDN script 标签上**没有伪造的 `integrity` SRI 哈希**
+- [ ] KaTeX 公式的字重通过 `.katex` 类被强制成 300（学术版 CSS 已处理）
 - [ ] 行内公式不打断行高
 - [ ] 长公式不超过 page width 90%，必要时换行或拆成两条
+- [ ] S25 中**每张 component card 必须含 KaTeX 公式块**，不能只用文字描述
 
 ### 表格
 - [ ] 用 `.acad-table` 而不是手写 `<table>` 加 inline style
