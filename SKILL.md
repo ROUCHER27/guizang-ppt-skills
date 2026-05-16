@@ -1,6 +1,6 @@
 ---
 name: guizang-ppt-skill
-description: 生成横向翻页网页 PPT（单 HTML 文件），含 WebGL 背景、章节幕封、数据大字报、图片网格等模板。提供两种风格：① "电子杂志 × 电子墨水"（衬线 + 流体背景 + 暖色） ② "瑞士国际主义"（无衬线 + 网格点阵 + IKB/柠檬黄/柠檬绿/安全橙高亮）。当用户需要制作分享 / 演讲 / 发布会风格的网页 PPT，或提到"杂志风 PPT"、"瑞士风 PPT"、"Swiss Style"、"horizontal swipe deck"时使用。
+description: 生成横向翻页网页 PPT（单 HTML 文件），含 WebGL 背景、章节幕封、数据大字报、图片网格等模板。提供三种风格：① "电子杂志 × 电子墨水"（衬线 + 流体背景 + 暖色） ② "瑞士国际主义"（无衬线 + 网格点阵 + IKB/柠檬黄/柠檬绿/安全橙高亮） ③ "瑞士国际主义 · 学术版"（在风格 ② 基础上增加 KaTeX 数学公式渲染、学术数据表格 S23、半屏复合图 S24、数学公式 hero S25、三层推荐 S26、参考文献 S27 等版式，专为 FYP 答辩 / thesis defense / viva / 学术报告设计）。当用户需要制作分享 / 演讲 / 发布会风格的网页 PPT，或提到"杂志风 PPT"、"瑞士风 PPT"、"Swiss Style"、"horizontal swipe deck"、"FYP 答辩 PPT"、"thesis defense slides"、"学术 PPT"、"含公式的 PPT"、"viva slides"时使用。
 ---
 
 # Magazine Web Ppt
